@@ -32,5 +32,53 @@
             <%- include("../partials/footer-adm") -%>
     </div>
 </body>
+const { body, validationResult } = require('express-validator');
+
+// Regras de validação para o cadastro de cliente
+const regrasValidacaoCliente = [
+  body('nome')
+    .trim()
+    .notEmpty().withMessage('O nome completo é obrigatório.')
+    .isLength({ min: 3 }).withMessage('O nome deve ter no mínimo 3 caracteres.'),
+  
+  body('email')
+    .trim()
+    .notEmpty().withMessage('O e-mail é obrigatório.')
+    .isEmail().withMessage('Informe um e-mail válido.')
+    .normalizeEmail(),
+  
+  body('cpf')
+    .trim()
+    .notEmpty().withMessage('O CPF é obrigatório.')
+    .matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/).withMessage('Formato de CPF inválido. Use 000.000.000-00 ou apenas números.'),
+  
+  body('telefone')
+    .trim()
+    .notEmpty().withMessage('O telefone é obrigatório.'),
+  
+  body('senha')
+    .if(body('senha').exists()) // Útil se for reaproveitar para edição onde a senha é opcional
+    .isLength({ min: 6 }).withMessage('A senha deve ter pelo menos 6 caracteres.')
+];
+
+// Middleware para processar e retornar os erros de validação
+const validarCliente = (req, res, next) => {
+  const erros = validationResult(req);
+  
+  if (!erros.isEmpty()) {
+    // Retorna os erros para a view administrativa renderizar novamente com os alertas
+    return res.status(400).render('adm/clientes/cadastro', {
+      erros: erros.mapped(),
+      dadosAntigos: req.body // Mantém os campos preenchidos para o usuário não perder o que digitou
+    });
+  }
+  
+  next();
+};
+
+module.exports = {
+  regrasValidacaoCliente,
+  validarCliente
+};
 
 </html>
